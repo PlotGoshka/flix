@@ -217,8 +217,15 @@ export default function Home() {
     window.setTimeout(() => setNotice(""), 2600);
   }
   function markPaid(item: Subscription) {
-    setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, nextDate: addCycle(entry.nextDate, entry.cycle) } : entry));
-    setNotice(item.name + " marked as paid"); window.setTimeout(() => setNotice(""), 2600);
+    const today = localDateString();
+    setItems((current) => current.map((entry) => {
+      if (entry.id !== item.id) return entry;
+      let nextDate = addCycle(entry.nextDate, entry.cycle);
+      let safety = 0;
+      while (nextDate < today && safety++ < 1200) nextDate = addCycle(nextDate, entry.cycle);
+      return { ...entry, nextDate };
+    }));
+    setNotice(item.name + " marked as paid · next date updated"); window.setTimeout(() => setNotice(""), 2600);
   }
   function removeItem(id: string) {
     if (!window.confirm("Delete this subscription?")) return;
