@@ -231,7 +231,7 @@ export default function Home() {
       try {
         const parsed = JSON.parse(String(reader.result));
         const source = Array.isArray(parsed) ? parsed : parsed?.subscriptions;
-        if (!Array.isArray(source) || source.some((item: any) => !item || typeof item.name !== "string" || !item.name.trim() || !Number.isFinite(Number(item.amount)) || Number(item.amount) <= 0 || !currencies.includes(item.currency) || !["weekly", "monthly", "yearly"].includes(item.cycle) || typeof item.nextDate !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(item.nextDate))) {
+        if (!Array.isArray(source) || source.some((item: any) => !item || typeof item.name !== "string" || !item.name.trim() || !Number.isFinite(Number(item.amount)) || Number(item.amount) <= 0 || !currencies.includes(item.currency) || !["weekly", "monthly", "yearly"].includes(item.cycle) || typeof item.nextDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(item.nextDate))) {
           throw new Error("Invalid backup format");
         }
         const clean: Subscription[] = source.map((item: any) => ({
