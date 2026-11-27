@@ -153,9 +153,24 @@ export default function Home() {
       current.map((item) => {
         if (item.id !== id) return item;
         const nextDate = new Date(item.nextDate + "T12:00:00");
-        if (item.cadence === "weekly") nextDate.setDate(nextDate.getDate() + 7);
-        if (item.cadence === "monthly") nextDate.setMonth(nextDate.getMonth() + 1);
-        if (item.cadence === "yearly") nextDate.setFullYear(nextDate.getFullYear() + 1);
+        if (item.cadence === "weekly") {
+          nextDate.setDate(nextDate.getDate() + 7);
+        } else if (item.cadence === "monthly") {
+          const day = nextDate.getDate();
+          nextDate.setDate(1);
+          nextDate.setMonth(nextDate.getMonth() + 1);
+          const lastDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+          nextDate.setDate(Math.min(day, lastDay));
+        } else {
+          const month = nextDate.getMonth();
+          const day = nextDate.getDate();
+          nextDate.setFullYear(nextDate.getFullYear() + 1);
+          if (nextDate.getMonth() !== month) {
+            nextDate.setDate(0);
+          } else {
+            nextDate.setDate(day);
+          }
+        }
         return { ...item, nextDate: nextDate.toISOString().slice(0, 10) };
       }),
     );
