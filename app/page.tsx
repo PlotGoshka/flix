@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity, ArrowUpRight, Bell, CalendarDays, Check, ChevronLeft, ChevronRight, CreditCard, Download,
   LayoutDashboard, Plus, Search, Settings2, Sparkles, Trash2, Wallet, X,
-  PencilLine, ReceiptText, ChartNoAxesCombined, Menu,
+  PencilLine, ReceiptText, ChartNoAxesCombined, Menu, Send, ShieldCheck, Smartphone,
 } from "lucide-react";
 
 type Currency = "EUR" | "USD" | "GBP" | "RUB";
@@ -21,6 +21,10 @@ type Subscription = {
 };
 
 const STORAGE_KEY = "flix.subscriptions.v1";
+const PREFERENCES_KEY = "flix.preferences.v1";
+const NOTIFIED_KEY = "flix.notifications.sent.v1";
+type Preferences = { browserNotifications: boolean; reminderDays: number };
+const defaultPreferences: Preferences = { browserNotifications: false, reminderDays: 3 };
 const currencies: Currency[] = ["EUR", "USD", "GBP", "RUB"];
 const categories = ["Entertainment", "Software", "Music", "Shopping", "Cloud", "Education", "Other"];
 const money = (amount: number, currency: Currency) =>
@@ -72,6 +76,8 @@ export default function Home() {
   const [mobileNav, setMobileNav] = useState(false);
   const [notice, setNotice] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(localDateString().slice(0, 7));
+  const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
 
   useEffect(() => {
     try {
@@ -80,13 +86,38 @@ export default function Home() {
         const parsed = JSON.parse(raw) as Subscription[];
         if (Array.isArray(parsed)) setItems(parsed);
       }
+      const savedPreferences = localStorage.getItem(PREFERENCES_KEY);
+      if (savedPreferences) setPreferences({ ...defaultPreferences, ...JSON.parse(savedPreferences) });
     } catch { /* Ignore invalid local browser data and start empty. */ }
+    if ("Notification" in window) setNotificationPermission(Notification.permission);
     setLoaded(true);
   }, []);
 
   useEffect(() => {
     if (loaded) localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items, loaded]);
+
+  useEffect(() => {
+    if (loaded) localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
+  }, [preferences, loaded]);
+
+  useEffect(() => {
+    if (!loaded || !preferences.browserNotifications || !("Notification" in window) || Notification.permission !== "granted") return;
+    let sent: string[] = [];
+    try { sent = JSON.parse(localStorage.getItem(NOTIFIED_KEY) || "[]") as string[]; } catch { sent = []; }
+    const due = items.filter(item => {
+      const days = daysUntil(item.nextDate);
+      const key = item.id + ":" + item.nextDate;
+      return days >= 0 && days <= preferences.reminderDays && !sent.includes(key);
+    });
+    due.forEach(item => {
+      const days = daysUntil(item.nextDate);
+      const when = days === 0 ? "сегодня" : days === 1 ? "завтра" : "через " + days + " дн.";
+      new Notification("FLIX · Скоро списание", { body: item.name + " — " + money(item.amount, item.currency) + " · " + when, tag: item.id + ":" + item.nextDate });
+      sent.push(item.id + ":" + item.nextDate);
+    });
+    if (due.length) localStorage.setItem(NOTIFIED_KEY, JSON.stringify(sent));
+  }, [items, loaded, preferences]);
 
   const upcoming = useMemo(() => [...items].sort((a, b) => a.nextDate.localeCompare(b.nextDate)), [items]);
   const filtered = useMemo(() => items.filter((item) =>
@@ -110,6 +141,24 @@ export default function Home() {
   function shiftCalendarMonth(delta: number) {
     const next = new Date(calendarStart.getFullYear(), calendarStart.getMonth() + delta, 1, 12);
     setCalendarMonth([next.getFullYear(), String(next.getMonth() + 1).padStart(2, "0")].join("-"));
+  }
+
+  async function enableBrowserNotifications() {
+    if (!("Notification" in window)) {
+      setNotice("Этот браузер не поддерживает уведомления");
+      window.setTimeout(() => setNotice(""), 2800);
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+    if (permission === "granted") {
+      setPreferences(current => ({ ...current, browserNotifications: true }));
+      setNotice("Уведомления включены");
+    } else {
+      setPreferences(current => ({ ...current, browserNotifications: false }));
+      setNotice(permission === "denied" ? "Разрешите уведомления в настройках браузера" : "Уведомления не включены");
+    }
+    window.setTimeout(() => setNotice(""), 2800);
   }
 
   function openAdd() {
@@ -152,6 +201,7 @@ export default function Home() {
     { name: "Subscriptions", icon: CreditCard },
     { name: "Payments", icon: CalendarDays },
     { name: "Insights", icon: ChartNoAxesCombined },
+    { name: "Settings", icon: Settings2 },
   ];
 
   return (
@@ -174,12 +224,12 @@ export default function Home() {
       <section className="main-area">
         <header className="topbar">
           <div className="topbar-left"><button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Open menu"><Menu size={20} /></button><span className="breadcrumb">Workspace</span><ChevronRight size={14} /><strong>{activeTab}</strong></div>
-          <div className="topbar-actions"><span className="local-status"><i /> Local data</span><button className="icon-button" title="Notifications"><Bell size={18} /></button><div className="top-avatar">Y</div></div>
+          <div className="topbar-actions"><span className="local-status"><i /> Local data</span><button className="icon-button" title="Reminder settings" onClick={() => setActiveTab("Settings")}><Bell size={18} /></button><div className="top-avatar">Y</div></div>
         </header>
 
         <div className="page-content">
           <div className="page-heading">
-            <div><div className="eyebrow"><span className="eyebrow-dot" /> YOUR MONEY, IN FOCUS</div><h1>{activeTab === "Overview" ? "Money Center" : activeTab}</h1><p>{activeTab === "Overview" ? "A clear view of your subscriptions and recurring payments." : activeTab === "Subscriptions" ? "Manage the services and recurring charges you track." : activeTab === "Payments" ? "See what is coming up and stay ready for each charge." : "Understand where your recurring money goes."}</p></div>
+            <div><div className="eyebrow"><span className="eyebrow-dot" /> YOUR MONEY, IN FOCUS</div><h1>{activeTab === "Overview" ? "Money Center" : activeTab}</h1><p>{activeTab === "Overview" ? "A clear view of your subscriptions and recurring payments." : activeTab === "Subscriptions" ? "Manage the services and recurring charges you track." : activeTab === "Payments" ? "See what is coming up and stay ready for each charge." : activeTab === "Insights" ? "Understand where your recurring money goes." : "Control reminders, privacy, and your Telegram connection."}</p></div>
             <button className="primary-button" onClick={openAdd}><Plus size={17} /> Add subscription</button>
           </div>
 
@@ -221,6 +271,32 @@ export default function Home() {
 </div>}
 
           {activeTab === "Insights" && <section className="panel full-panel"><div className="panel-heading"><div><h2>Spending breakdown</h2><p>Monthly equivalent by currency and category.</p></div></div>{items.length ? <div className="insights-layout"><div className="insight-total"><span>TRACKED SERVICES</span><strong>{items.length}</strong><p>Monthly estimates are calculated from each billing cycle.</p></div><div className="category-breakdown">{categories.map((category) => { const amount = items.filter(i => i.category === category).reduce((sum, i) => sum + monthEquivalent(i), 0); const count = items.filter(i => i.category === category).length; return count ? <div className="category-row" key={category}><div><strong>{category}</strong><small>{count} {count === 1 ? "service" : "services"}</small></div><div className="category-bars">{currencies.filter(c => items.some(i => i.category === category && i.currency === c)).map(c => { const value = items.filter(i => i.category === category && i.currency === c).reduce((sum, i) => sum + monthEquivalent(i), 0); const maximum = Math.max(...categories.map(group => items.filter(i => i.category === group && i.currency === c).reduce((sum, i) => sum + monthEquivalent(i), 0))); return <div className="category-currency" key={c}><div className="category-currency-top"><span>{c}</span><strong>{money(value, c)}</strong></div><div className="category-bar-track"><i style={{ width: Math.max(4, value / maximum * 100) + "%" }} /></div></div>; })}</div></div> : null; })}</div></div> : <EmptyState onAdd={openAdd} />}</section>}
+
+          {activeTab === "Settings" && <div className="settings-layout">
+            <section className="panel settings-panel">
+              <div className="panel-heading"><div><h2>Reminders</h2><p>Choose when FLIX should alert you about upcoming charges.</p></div><div className="settings-icon"><Bell size={18} /></div></div>
+              <div className="settings-row">
+                <div className="settings-copy"><strong>Browser notifications</strong><p>Show a notification when you open FLIX and a payment is approaching. The app must be open for local reminders to be checked.</p><small>{notificationPermission === "granted" ? "Browser permission granted" : notificationPermission === "denied" ? "Blocked by browser settings" : "Permission not requested"}</small></div>
+                {preferences.browserNotifications ? <button className="secondary-button" onClick={() => setPreferences(current => ({ ...current, browserNotifications: false }))}>Turn off</button> : <button className="primary-button" onClick={enableBrowserNotifications}>Enable</button>}
+              </div>
+              <div className="settings-row">
+                <div className="settings-copy"><strong>Remind me before payment</strong><p>Local reminders are checked once when FLIX is opened. Each payment is notified only once per scheduled date.</p></div>
+                <select className="settings-select" value={preferences.reminderDays} onChange={event => setPreferences(current => ({ ...current, reminderDays: Number(event.target.value) }))}><option value={0}>On the due date</option><option value={1}>1 day before</option><option value={3}>3 days before</option><option value={7}>7 days before</option></select>
+              </div>
+              <div className="settings-footnote"><ShieldCheck size={16} /><span>Notification preferences are stored in this browser. These are local browser alerts, not Telegram or background push notifications.</span></div>
+            </section>
+            <section className="panel settings-panel telegram-panel">
+              <div className="panel-heading"><div><h2>Telegram connection</h2><p>Get payment reminders in your Telegram chat.</p></div><div className="telegram-mark"><Send size={18} /></div></div>
+              <div className="telegram-connect-row"><div className="telegram-visual"><Send size={22} /></div><div className="settings-copy"><strong>FLIX Telegram Bot</strong><p>Bot integration is being prepared. Once secure account linking and cloud sync are ready, you’ll be able to connect your chat here.</p><span className="connection-status"><i /> Not connected</span></div></div>
+              <div className="telegram-steps"><div><span>01</span><p>Cloud account and secure sync</p></div><div><span>02</span><p>Link your Telegram account</p></div><div><span>03</span><p>Receive payment reminders</p></div></div>
+              <div className="settings-footnote"><Smartphone size={16} /><span>Your current subscriptions remain on this device. Telegram cannot access them until cloud sync is implemented.</span></div>
+            </section>
+            <section className="panel settings-panel privacy-panel">
+              <div className="panel-heading"><div><h2>Data & privacy</h2><p>Know exactly where your information lives.</p></div></div>
+              <div className="privacy-status"><span className="privacy-dot" /><div><strong>Stored locally on this device</strong><p>{items.length} {items.length === 1 ? "subscription" : "subscriptions"} saved in this browser. No bank or email connections are active.</p></div></div>
+              <button className="secondary-button" onClick={exportCsv} disabled={!items.length}><Download size={15} /> Export a backup (CSV)</button>
+            </section>
+          </div>}
           <footer className="footer"><span>FLIX © 2026</span><span>Subscription clarity, without the noise.</span><span>Version 0.1 · MVP</span></footer>
         </div>
       </section>
