@@ -16,9 +16,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+      # There is no committed package-lock.json yet, so npm ci cannot run.
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Lint
         run: npm run lint
       - name: Build
