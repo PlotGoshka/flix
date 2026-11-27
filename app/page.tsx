@@ -112,7 +112,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (loaded) localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    if (!loaded) return;
+    if (items.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    else localStorage.removeItem(STORAGE_KEY);
   }, [items, loaded]);
 
   useEffect(() => {
