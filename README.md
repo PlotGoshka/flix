@@ -36,6 +36,14 @@ The MVP stores data in the browser's localStorage on the current device. It does
 - lucide-react
 
 
+## Settings and reminders
+
+- Configure local browser reminders for 0, 1, 3, or 7 days before a payment.
+- Browser notifications are checked when FLIX is opened and are sent once per subscription payment date.
+- Reminder preferences and the notification history are stored in the current browser.
+- Telegram connection is shown as a planned integration; account linking and cloud sync are not available yet.
+
+
 ## Telegram bot (foundation)
 
 FLIX includes a Telegram webhook endpoint at `/api/telegram/webhook`. It currently supports `/start`, `/help`, and `/status`. Subscription syncing and payment reminders are intentionally not enabled yet because the MVP still stores data only in the current browser.
