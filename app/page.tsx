@@ -259,12 +259,16 @@ export default function Home() {
         if (!Array.isArray(source) || source.some((item: any) => !item || typeof item.name !== "string" || !item.name.trim() || !Number.isFinite(Number(item.amount)) || Number(item.amount) <= 0 || !currencies.includes(item.currency) || !["weekly", "monthly", "yearly"].includes(item.cycle) || typeof item.nextDate !== "string" || !isValidDateString(item.nextDate))) {
           throw new Error("Invalid backup format");
         }
-        const clean: Subscription[] = source.map((item: any) => ({
-          id: typeof item.id === "string" ? item.id : crypto.randomUUID(),
-          name: item.name.trim(), category: categories.includes(item.category) ? item.category : "Other",
-          amount: Number(item.amount), currency: item.currency, cycle: item.cycle, nextDate: item.nextDate,
-          createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
-        }));
+        const usedIds = new Set<string>();
+        const clean: Subscription[] = source.map((item: any) => {
+          const id = typeof item.id === "string" && item.id.trim() && !usedIds.has(item.id) ? item.id : crypto.randomUUID();
+          usedIds.add(id);
+          return {
+            id, name: item.name.trim(), category: categories.includes(item.category) ? item.category : "Other",
+            amount: Number(item.amount), currency: item.currency, cycle: item.cycle, nextDate: item.nextDate,
+            createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
+          };
+        });
         if (!window.confirm("Import " + clean.length + " subscriptions and replace your current FLIX list?")) return;
         setItems(clean);
         if (parsed?.preferences && typeof parsed.preferences.browserNotifications === "boolean" && [0, 1, 3, 7].includes(parsed.preferences.reminderDays)) {
