@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, Check,
-  ChevronRight, CircleDollarSign, CreditCard, Download, LayoutDashboard,
-  Plus, Search, Settings2, Sparkles, Trash2, Wallet, X, PencilLine,
-  ReceiptText, ChartNoAxesCombined, Menu,
+  Activity, Bell, CalendarDays, Check, ChevronRight, CreditCard, Download,
+  LayoutDashboard, Plus, Search, Settings2, Sparkles, Trash2, Wallet, X,
+  PencilLine, ReceiptText, ChartNoAxesCombined, Menu,
 } from "lucide-react";
 
 type Currency = "EUR" | "USD" | "GBP" | "RUB";
@@ -30,8 +29,15 @@ const money = (amount: number, currency: Currency) =>
 function addCycle(dateString: string, cycle: Cycle) {
   const date = new Date(dateString + "T12:00:00");
   if (cycle === "weekly") date.setDate(date.getDate() + 7);
-  if (cycle === "monthly") date.setMonth(date.getMonth() + 1);
-  if (cycle === "yearly") date.setFullYear(date.getFullYear() + 1);
+  if (cycle === "monthly" || cycle === "yearly") {
+    const originalDay = date.getDate();
+    const targetYear = date.getFullYear() + (cycle === "yearly" ? 1 : 0);
+    const targetMonth = date.getMonth() + (cycle === "monthly" ? 1 : 0);
+    const normalized = new Date(targetYear, targetMonth, 1, 12);
+    const lastDay = new Date(normalized.getFullYear(), normalized.getMonth() + 1, 0).getDate();
+    normalized.setDate(Math.min(originalDay, lastDay));
+    return [normalized.getFullYear(), String(normalized.getMonth() + 1).padStart(2, "0"), String(normalized.getDate()).padStart(2, "0")].join("-");
+  }
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
 }
 function daysUntil(dateString: string) {
