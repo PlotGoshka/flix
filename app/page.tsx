@@ -51,10 +51,14 @@ function monthEquivalent(item: Subscription) {
   if (item.cycle === "yearly") return item.amount / 12;
   return item.amount;
 }
+function localDateString() {
+  const date = new Date();
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+}
 
 const blankForm = {
   name: "", category: "Entertainment" as string, amount: "", currency: "EUR" as Currency,
-  cycle: "monthly" as Cycle, nextDate: new Date().toISOString().slice(0, 10),
+  cycle: "monthly" as Cycle, nextDate: localDateString(),
 };
 
 export default function Home() {
@@ -127,7 +131,7 @@ export default function Home() {
     const rows = [["Service", "Category", "Amount", "Currency", "Billing cycle", "Next payment"], ...items.map((item) => [item.name, item.category, String(item.amount), item.currency, item.cycle, item.nextDate])];
     const csv = rows.map((row) => row.map((cell) => '"' + cell.replaceAll('"', '""') + '"').join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const anchor = document.createElement("a"); anchor.href = url; anchor.download = "flix-subscriptions.csv"; anchor.click(); URL.revokeObjectURL(url);
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = "flix-subscriptions.csv"; anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   const nav = [
