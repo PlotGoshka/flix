@@ -222,7 +222,7 @@ export default function Home() {
     setNotice("Local FLIX data cleared"); window.setTimeout(() => setNotice(""), 2600);
   }
   function exportBackup() {
-    const backup = { app: "FLIX", formatVersion: 1, exportedAt: new Date().toISOString(), subscriptions: items };
+    const backup = { app: "FLIX", formatVersion: 1, exportedAt: new Date().toISOString(), subscriptions: items, preferences };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a"); anchor.href = url; anchor.download = "flix-backup.json"; anchor.click();
@@ -248,7 +248,12 @@ export default function Home() {
           createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
         }));
         if (!window.confirm("Import " + clean.length + " subscriptions and replace your current FLIX list?")) return;
-        setItems(clean); setNotice("Backup imported successfully"); window.setTimeout(() => setNotice(""), 2600);
+        setItems(clean);
+        if (parsed?.preferences && typeof parsed.preferences.browserNotifications === "boolean" && [0, 1, 3, 7].includes(parsed.preferences.reminderDays)) {
+          setPreferences({ browserNotifications: parsed.preferences.browserNotifications, reminderDays: parsed.preferences.reminderDays });
+        }
+        localStorage.removeItem(NOTIFIED_KEY);
+        setNotice("Backup imported successfully"); window.setTimeout(() => setNotice(""), 2600);
       } catch {
         setNotice("File is not a valid FLIX backup"); window.setTimeout(() => setNotice(""), 3000);
       } finally { input.value = ""; }
