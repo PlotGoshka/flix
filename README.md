@@ -38,7 +38,7 @@ The MVP stores data in the browser's localStorage on the current device. It does
 
 ## Backup and restore
 
-In Settings, export a full JSON backup to move your list to another browser or device. Importing a backup replaces the current list after a confirmation. CSV export remains available for spreadsheets but is not a restorable backup. The Clear local data action removes tracked subscriptions and local reminder history from this browser.
+In Settings, export a JSON backup of your subscriptions and reminder preferences to move your list to another browser or device. Importing a backup replaces the current list after a confirmation and restores supported reminder preferences; reminder history is reset so imported charges can be checked again. CSV export remains available for spreadsheets but is not a restorable backup. The Clear local data action removes tracked subscriptions and local reminder history from this browser.
 
 ## Automated checks
 
