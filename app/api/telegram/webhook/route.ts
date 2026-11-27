@@ -47,22 +47,22 @@ export async function POST(request: NextRequest) {
 
   if (command === "/start") {
     reply =
-      "Welcome to FLIX 👋\n\n" +
-      "I’ll help you keep recurring payments under control.\n" +
+      "Добро пожаловать в FLIX 👋\n\n" +
+      "Я помогу следить за регулярными платежами и подписками.\n" +
       "The bot is connected, but subscription sync is not enabled yet. " +
       "We’re preparing secure account linking.";
   } else if (command === "/help") {
     reply =
-      "FLIX Bot commands\n\n" +
-      "/start — start the bot\n" +
-      "/help — show this help\n" +
-      "/status — check the connection status";
+      "Команды FLIX Bot\n\n" +
+      "/start — запустить бота\n" +
+      "/help — помощь\n" +
+      "/status — проверить подключение";
   } else if (command === "/status") {
     reply =
-      "The FLIX Telegram endpoint is online.\n" +
-      "Your subscription list is not synced to the bot yet.";
+      "Бот FLIX работает.\n" +
+      "Список подписок пока не синхронизирован с ботом.";
   } else {
-    reply = "I don’t know that command yet. Send /help to see available commands.";
+    reply = "Не знаю такую команду. Отправь /help, чтобы увидеть список команд.";
   }
 
   await sendTelegramMessage(chatId, reply);
