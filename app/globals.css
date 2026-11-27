@@ -125,3 +125,12 @@ button{cursor:pointer}
 .paid-button:hover{background:#1d2b1d;color:var(--accent)}
 .secondary-button:disabled{opacity:.38;cursor:not-allowed;transform:none}
 @media(max-width:760px){.subscription-row{grid-template-columns:1.5fr 1fr 64px}.subscription-row>*:nth-child(3),.subscription-row>*:nth-child(4){display:none}.subscription-row .row-actions{display:flex}.table-actions{flex-wrap:wrap}.table-actions .secondary-button{padding:10px}}
+
+
+.category-breakdown{display:grid;gap:15px;border-top:1px solid #232731;padding-top:16px}
+.category-item{display:grid;gap:7px}
+.category-meta{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.category-meta strong{font-size:11px;font-weight:600}
+.category-meta span{font-size:10px;color:#9298a6;text-align:right}
+.category-track{height:6px;border-radius:20px;background:#282d35;overflow:hidden}
+.category-track span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#83d94c,#c4ff91);min-width:2px}
