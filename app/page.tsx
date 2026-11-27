@@ -189,6 +189,42 @@ export default function Home() {
     if (!window.confirm("Delete this subscription?")) return;
     setItems((current) => current.filter((item) => item.id !== id));
   }
+  function exportBackup() {
+    const backup = { app: "FLIX", formatVersion: 1, exportedAt: new Date().toISOString(), subscriptions: items };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = "flix-backup.json"; anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setNotice("Backup exported"); window.setTimeout(() => setNotice(""), 2600);
+  }
+  function importBackup(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const input = event.target;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        const source = Array.isArray(parsed) ? parsed : parsed?.subscriptions;
+        if (!Array.isArray(source) || source.some((item: any) => !item || typeof item.name !== "string" || !item.name.trim() || !Number.isFinite(Number(item.amount)) || Number(item.amount) <= 0 || !currencies.includes(item.currency) || !["weekly", "monthly", "yearly"].includes(item.cycle) || typeof item.nextDate !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(item.nextDate))) {
+          throw new Error("Invalid backup format");
+        }
+        const clean: Subscription[] = source.map((item: any) => ({
+          id: typeof item.id === "string" ? item.id : crypto.randomUUID(),
+          name: item.name.trim(), category: categories.includes(item.category) ? item.category : "Other",
+          amount: Number(item.amount), currency: item.currency, cycle: item.cycle, nextDate: item.nextDate,
+          createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
+        }));
+        if (!window.confirm("Import " + clean.length + " subscriptions and replace your current FLIX list?")) return;
+        setItems(clean); setNotice("Backup imported successfully"); window.setTimeout(() => setNotice(""), 2600);
+      } catch {
+        setNotice("File is not a valid FLIX backup"); window.setTimeout(() => setNotice(""), 3000);
+      } finally { input.value = ""; }
+    };
+    reader.onerror = () => { setNotice("Could not read the backup file"); window.setTimeout(() => setNotice(""), 3000); input.value = ""; };
+    reader.readAsText(file);
+  }
+
   function exportCsv() {
     const rows = [["Service", "Category", "Amount", "Currency", "Billing cycle", "Next payment"], ...items.map((item) => [item.name, item.category, String(item.amount), item.currency, item.cycle, item.nextDate])];
     const csv = "\uFEFF" + rows.map((row) => row.map((cell) => '"' + cell.replaceAll('"', '""') + '"').join(",")).join("\r\n");
@@ -294,7 +330,7 @@ export default function Home() {
             <section className="panel settings-panel privacy-panel">
               <div className="panel-heading"><div><h2>Data & privacy</h2><p>Know exactly where your information lives.</p></div></div>
               <div className="privacy-status"><span className="privacy-dot" /><div><strong>Stored locally on this device</strong><p>{items.length} {items.length === 1 ? "subscription" : "subscriptions"} saved in this browser. No bank or email connections are active.</p></div></div>
-              <button className="secondary-button" onClick={exportCsv} disabled={!items.length}><Download size={15} /> Export a backup (CSV)</button>
+              <div className="privacy-actions"><button className="secondary-button" onClick={exportCsv} disabled={!items.length}><Download size={15} /> Export CSV</button><div className="settings-backup-actions"><button className="secondary-button" onClick={exportBackup}><Download size={15} /> Export JSON backup</button><label className="secondary-button backup-import-label"><Download size={15} /> Import backup<input type="file" accept=".json,application/json" onChange={importBackup} /></label></div></div>
             </section>
           </div>}
           <footer className="footer"><span>FLIX © 2026</span><span>Subscription clarity, without the noise.</span><span>Version 0.1 · MVP</span></footer>
