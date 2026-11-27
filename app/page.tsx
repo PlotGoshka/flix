@@ -10,6 +10,8 @@ import {
   ChevronDown,
   CircleHelp,
   CreditCard,
+  CheckCircle2,
+  Download,
   LayoutDashboard,
   Plus,
   Search,
@@ -146,6 +148,35 @@ export default function Home() {
     setSubscriptions((current) => current.filter((item) => item.id !== id));
   }
 
+  function markPaid(id: string) {
+    setSubscriptions((current) =>
+      current.map((item) => {
+        if (item.id !== id) return item;
+        const nextDate = new Date(item.nextDate + "T12:00:00");
+        if (item.cadence === "weekly") nextDate.setDate(nextDate.getDate() + 7);
+        if (item.cadence === "monthly") nextDate.setMonth(nextDate.getMonth() + 1);
+        if (item.cadence === "yearly") nextDate.setFullYear(nextDate.getFullYear() + 1);
+        return { ...item, nextDate: nextDate.toISOString().slice(0, 10) };
+      }),
+    );
+  }
+
+  function exportSubscriptions() {
+    const headers = ["Service", "Category", "Amount", "Currency", "Billing cycle", "Next payment"];
+    const rows = subscriptions.map((item) =>
+      [item.name, item.category, String(item.amount), item.currency, item.cadence, item.nextDate]
+        .map((value) => '"' + value.replaceAll('"', '""') + '"')
+        .join(","),
+    );
+    const csv = [headers.join(","), ...rows].join("\\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "flix-subscriptions.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   const next = upcoming[0];
 
   return (
@@ -236,6 +267,7 @@ export default function Home() {
               <div><h2>Your subscriptions</h2><p>Keep every recurring payment visible.</p></div>
               <div className="table-actions">
                 <label className="search-box"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search subscriptions" /></label>
+                <button className="secondary-button" onClick={exportSubscriptions} disabled={subscriptions.length === 0}><Download size={15} /> Export CSV</button>
                 <button className="secondary-button" onClick={() => setModalOpen(true)}><Plus size={16} /> Add new</button>
               </div>
             </div>
@@ -256,7 +288,10 @@ export default function Home() {
                       <strong>{money(item.amount, item.currency)}</strong>
                       <span className="billing-pill">{item.cadence}</span>
                       <div className="next-cell"><strong>{new Date(item.nextDate + "T12:00:00").toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" })}</strong><span>{nextChargeLabel(item.nextDate)}</span></div>
-                      <button className="delete-button" onClick={() => removeSubscription(item.id)} aria-label={`Delete ${item.name}`}><Trash2 size={16} /></button>
+                      <div className="row-actions">
+                        <button className="paid-button" onClick={() => markPaid(item.id)} aria-label={`Mark ${item.name} as paid`} title="Mark paid · move to next billing date"><CheckCircle2 size={16} /></button>
+                        <button className="delete-button" onClick={() => removeSubscription(item.id)} aria-label={`Delete ${item.name}`}><Trash2 size={16} /></button>
+                      </div>
                     </div>
                   ))}
                 </div>
