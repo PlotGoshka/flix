@@ -17,6 +17,7 @@ type Subscription = {
   currency: Currency;
   cycle: Cycle;
   nextDate: string;
+  anchorDate?: string;
   createdAt: string;
 };
 
@@ -30,13 +31,14 @@ const categories = ["Entertainment", "Software", "Music", "Shopping", "Cloud", "
 const money = (amount: number, currency: Currency) =>
   new Intl.NumberFormat("en", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
 
-function addCycle(dateString: string, cycle: Cycle) {
+function addCycle(dateString: string, cycle: Cycle, anchorDate = dateString) {
   const date = new Date(dateString + "T12:00:00");
+  const anchor = new Date(anchorDate + "T12:00:00");
   if (cycle === "weekly") date.setDate(date.getDate() + 7);
   if (cycle === "monthly" || cycle === "yearly") {
-    const originalDay = date.getDate();
+    const originalDay = anchor.getDate();
     const targetYear = date.getFullYear() + (cycle === "yearly" ? 1 : 0);
-    const targetMonth = date.getMonth() + (cycle === "monthly" ? 1 : 0);
+    const targetMonth = cycle === "yearly" ? anchor.getMonth() : date.getMonth() + 1;
     const normalized = new Date(targetYear, targetMonth, 1, 12);
     const lastDay = new Date(normalized.getFullYear(), normalized.getMonth() + 1, 0).getDate();
     normalized.setDate(Math.min(originalDay, lastDay));
@@ -60,15 +62,16 @@ function projectedPayments(items: Subscription[], monthKey: string) {
   const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1, 12);
   return items.flatMap((item) => {
     let date = item.nextDate;
+    const anchorDate = item.anchorDate || item.nextDate;
     const matches: { item: Subscription; date: string }[] = [];
     let guard = 0;
     while (date < [monthStart.getFullYear(), String(monthStart.getMonth() + 1).padStart(2, "0"), "01"].join("-") && guard++ < 1200) {
-      date = addCycle(date, item.cycle);
+      date = addCycle(date, item.cycle, anchorDate);
     }
     guard = 0;
     while (date < [monthEnd.getFullYear(), String(monthEnd.getMonth() + 1).padStart(2, "0"), "01"].join("-") && guard++ < 20) {
       matches.push({ item, date });
-      date = addCycle(date, item.cycle);
+      date = addCycle(date, item.cycle, anchorDate);
     }
     return matches;
   });
@@ -210,9 +213,9 @@ export default function Home() {
     const amount = Number(form.amount);
     if (!form.name.trim() || !Number.isFinite(amount) || amount <= 0 || !form.nextDate) return;
     if (editing) {
-      setItems((current) => current.map((item) => item.id === editing ? { ...item, ...form, name: form.name.trim(), amount } : item));
+      setItems((current) => current.map((item) => item.id === editing ? { ...item, ...form, name: form.name.trim(), amount, anchorDate: form.nextDate !== item.nextDate ? form.nextDate : item.anchorDate || item.nextDate } : item));
     } else {
-      setItems((current) => [...current, { ...form, id: crypto.randomUUID(), name: form.name.trim(), amount, createdAt: new Date().toISOString() }]);
+      setItems((current) => [...current, { ...form, id: crypto.randomUUID(), name: form.name.trim(), amount, anchorDate: form.nextDate, createdAt: new Date().toISOString() }]);
     }
     setModalOpen(false); setNotice(editing ? "Subscription updated" : "Subscription added");
     window.setTimeout(() => setNotice(""), 2600);
@@ -221,10 +224,11 @@ export default function Home() {
     const today = localDateString();
     setItems((current) => current.map((entry) => {
       if (entry.id !== item.id) return entry;
-      let nextDate = addCycle(entry.nextDate, entry.cycle);
+      const anchorDate = entry.anchorDate || entry.nextDate;
+      let nextDate = addCycle(entry.nextDate, entry.cycle, anchorDate);
       let safety = 0;
-      while (nextDate < today && safety++ < 1200) nextDate = addCycle(nextDate, entry.cycle);
-      return { ...entry, nextDate };
+      while (nextDate < today && safety++ < 1200) nextDate = addCycle(nextDate, entry.cycle, anchorDate);
+      return { ...entry, nextDate, anchorDate };
     }));
     setNotice(item.name + " marked as paid · next date updated"); window.setTimeout(() => setNotice(""), 2600);
   }
@@ -266,6 +270,7 @@ export default function Home() {
           return {
             id, name: item.name.trim(), category: categories.includes(item.category) ? item.category : "Other",
             amount: Number(item.amount), currency: item.currency, cycle: item.cycle, nextDate: item.nextDate,
+            anchorDate: typeof item.anchorDate === "string" && isValidDateString(item.anchorDate) ? item.anchorDate : item.nextDate,
             createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
           };
         });
