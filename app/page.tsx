@@ -62,7 +62,7 @@ function projectedPayments(items: Subscription[], monthKey: string) {
     let date = item.nextDate;
     const matches: { item: Subscription; date: string }[] = [];
     let guard = 0;
-    while (date < [monthStart.getFullYear(), String(monthStart.getMonth() + 1).padStart(2, "0"), "01"].join("-") && guard++ < 120) {
+    while (date < [monthStart.getFullYear(), String(monthStart.getMonth() + 1).padStart(2, "0"), "01"].join("-") && guard++ < 1200) {
       date = addCycle(date, item.cycle);
     }
     guard = 0;
@@ -316,7 +316,7 @@ export default function Home() {
 
           {activeTab === "Payments" && <div className="payments-layout">
   <section className="panel calendar-panel">
-    <div className="panel-heading"><div><h2>Payment calendar</h2><p>Every charge, mapped by date.</p></div><div className="calendar-controls"><button className="icon-button" onClick={() => shiftCalendarMonth(-1)} aria-label="Previous month"><ChevronLeft size={17} /></button><strong>{calendarTitle}</strong><button className="icon-button" onClick={() => shiftCalendarMonth(1)} aria-label="Next month"><ChevronRight size={17} /></button></div></div>
+    <div className="panel-heading"><div><h2>Payment calendar</h2><p>Projected recurring charges for this month.</p></div><div className="calendar-controls"><button className="icon-button" onClick={() => shiftCalendarMonth(-1)} aria-label="Previous month"><ChevronLeft size={17} /></button><strong>{calendarTitle}</strong><button className="icon-button" onClick={() => shiftCalendarMonth(1)} aria-label="Next month"><ChevronRight size={17} /></button></div></div>
     <div className="calendar-grid calendar-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => <span key={day}>{day}</span>)}</div>
     <div className="calendar-grid">{calendarCells.map((day, index) => {
       const dateKey = day ? calendarMonth + "-" + String(day).padStart(2, "0") : "";
