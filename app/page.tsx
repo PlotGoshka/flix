@@ -45,10 +45,10 @@ function addCycle(dateString: string, cycle: Cycle) {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
 }
 function daysUntil(dateString: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(dateString + "T00:00:00");
-  return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+  // Compare calendar dates in UTC to avoid 23/25-hour DST days shifting the result.
+  const target = Date.parse(dateString + "T00:00:00Z");
+  const today = Date.parse(localDateString() + "T00:00:00Z");
+  return Math.round((target - today) / 86400000);
 }
 function monthEquivalent(item: Subscription) {
   if (item.cycle === "weekly") return item.amount * 52 / 12;
