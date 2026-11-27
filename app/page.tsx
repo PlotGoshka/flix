@@ -73,6 +73,11 @@ function projectedPayments(items: Subscription[], monthKey: string) {
     return matches;
   });
 }
+function isValidDateString(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(value + "T12:00:00");
+  return date.getFullYear() === Number(value.slice(0, 4)) && date.getMonth() + 1 === Number(value.slice(5, 7)) && date.getDate() === Number(value.slice(8, 10));
+}
 function localDateString() {
   const date = new Date();
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
@@ -233,7 +238,7 @@ export default function Home() {
       try {
         const parsed = JSON.parse(String(reader.result));
         const source = Array.isArray(parsed) ? parsed : parsed?.subscriptions;
-        if (!Array.isArray(source) || source.some((item: any) => !item || typeof item.name !== "string" || !item.name.trim() || !Number.isFinite(Number(item.amount)) || Number(item.amount) <= 0 || !currencies.includes(item.currency) || !["weekly", "monthly", "yearly"].includes(item.cycle) || typeof item.nextDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(item.nextDate))) {
+        if (!Array.isArray(source) || source.some((item: any) => !item || typeof item.name !== "string" || !item.name.trim() || !Number.isFinite(Number(item.amount)) || Number(item.amount) <= 0 || !currencies.includes(item.currency) || !["weekly", "monthly", "yearly"].includes(item.cycle) || typeof item.nextDate !== "string" || !isValidDateString(item.nextDate))) {
           throw new Error("Invalid backup format");
         }
         const clean: Subscription[] = source.map((item: any) => ({
