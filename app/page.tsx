@@ -117,6 +117,15 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!modalOpen && !mobileNav) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setModalOpen(false); setMobileNav(false); }
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [modalOpen, mobileNav]);
+
+  useEffect(() => {
     if (!loaded) return;
     if (items.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     else localStorage.removeItem(STORAGE_KEY);
