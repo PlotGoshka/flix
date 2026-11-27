@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity, Bell, CalendarDays, Check, ChevronRight, CreditCard, Download,
+  Activity, ArrowUpRight, Bell, CalendarDays, Check, ChevronRight, CreditCard, Download,
   LayoutDashboard, Plus, Search, Settings2, Sparkles, Trash2, Wallet, X,
   PencilLine, ReceiptText, ChartNoAxesCombined, Menu,
 } from "lucide-react";
