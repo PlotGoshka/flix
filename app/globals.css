@@ -80,3 +80,80 @@
 
 .danger-action{border-color:rgba(255,111,111,.2)!important;color:#ff8f8f!important}
 .danger-action:hover{background:rgba(255,95,95,.09)!important;border-color:rgba(255,111,111,.38)!important}
+
+/* FLIX visual refinement · quieter, more intentional hierarchy */
+:root{--bg:#090b0f;--sidebar:#0c0f13;--panel:#11151a;--panel2:#161b21;--line:#232a30;--muted:#7d8792;--accent:#c0f18a;--accent-dark:#8dbb5f}
+html,body{background:#090b0f}
+.app-shell{background:radial-gradient(ellipse at 68% 0%,rgba(190,240,136,.055),transparent 30%),linear-gradient(180deg,#0a0c10,#090b0f 55%)}
+.sidebar{background:linear-gradient(180deg,#0c0f13,#0b0e12);border-right-color:#1d242a;padding:29px 16px 18px}
+.brand{padding-bottom:42px;gap:11px;letter-spacing:-1.6px}
+.brand-mark{border-radius:9px;box-shadow:0 0 24px rgba(192,241,138,.12)}
+.workspace-switch{background:#10141a;border-color:#20272f;border-radius:11px;margin-bottom:35px;padding:11px}
+.nav-list{gap:4px}
+.nav-link{height:42px;border-radius:8px;position:relative}
+.nav-link.active{background:linear-gradient(90deg,rgba(192,241,138,.11),rgba(192,241,138,.035));color:#c3f28f}
+.nav-link.active:before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:2px;background:var(--accent);border-radius:3px}
+.upgrade-card{background:linear-gradient(145deg,rgba(192,241,138,.055),rgba(15,18,23,.4));border-color:#242c32;border-radius:12px}
+.profile-row{border-top-color:#1f262c}
+.topbar{height:68px;border-color:#1c2228;padding:0 clamp(20px,3vw,48px);background:rgba(9,11,15,.55)}
+.page-content{padding:43px clamp(20px,3vw,48px) 28px}
+.page-heading{margin-bottom:30px}
+.eyebrow{letter-spacing:1.8px;font-size:9px}
+.page-heading h1{font-size:34px;letter-spacing:-1.4px;margin:12px 0 8px}
+.page-heading p{font-size:12px;color:#8d97a2;line-height:1.65}
+.primary-button{border-radius:9px;box-shadow:0 1px 0 rgba(255,255,255,.18) inset;letter-spacing:.1px}
+.primary-button:hover{box-shadow:0 9px 26px rgba(192,241,138,.1),0 1px 0 rgba(255,255,255,.18) inset}
+.secondary-button{background:#151a20;border-color:#2b333b;border-radius:9px}
+.stats-grid{gap:12px;margin-bottom:17px}
+.stat-card,.panel{background:linear-gradient(155deg,#13171d 0%,#101419 100%);border-color:#242b31;box-shadow:0 12px 32px rgba(0,0,0,.12)}
+.stat-card{border-radius:13px;padding:19px 19px 16px;min-height:148px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s,box-shadow .2s}
+.stat-card:after{content:"";position:absolute;right:-35px;top:-42px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(192,241,138,.045),transparent 70%);pointer-events:none}
+.stat-card:hover{transform:translateY(-2px);border-color:#303a41;box-shadow:0 16px 34px rgba(0,0,0,.2)}
+.stat-top{font-size:9px;letter-spacing:1.15px;color:#8a949f}
+.stat-value{font-size:31px;letter-spacing:-1.4px}
+.stat-value-list strong{font-size:23px}
+.stat-foot{color:#7d8994;font-size:10px}
+.stat-icon{border:1px solid rgba(255,255,255,.025)}
+.panel{border-radius:13px;padding:21px}
+.panel-heading{margin-bottom:20px}
+.panel-heading h2{font-size:15px;letter-spacing:-.4px}
+.panel-heading p{font-size:11px;color:#84909a}
+.content-grid{gap:16px}
+.table-wrap{border:1px solid #222930;border-radius:9px}
+th{padding:12px 10px;background:#12161b;border-bottom-color:#252c33}
+td{padding:14px 10px}
+tbody tr{transition:background .16s}
+tbody tr:hover{background:rgba(192,241,138,.025)}
+.service-logo{background:#1b2229;border:1px solid #252e36;border-radius:9px}
+.category-tag{background:#1b2229;border:1px solid #242c33;color:#b1bcc8}
+.status-pill{border:1px solid transparent}
+.status-pill.scheduled{background:#1c232a;border-color:#252d34;color:#9eabb8}
+.status-pill.soon{border-color:rgba(244,193,109,.13)}
+.status-pill.overdue{border-color:rgba(255,133,133,.13)}
+.radar-item{border-color:#222930}
+.radar-date{background:#141a20;border-color:#28313a}
+.bottom-note{border-color:#27332a;background:linear-gradient(90deg,rgba(192,241,138,.04),rgba(192,241,138,.012));border-radius:11px}
+.calendar-panel{padding:22px}
+.calendar-day{background:#141920;border-color:#232b33;transition:border-color .15s,background .15s}
+.calendar-day:hover{border-color:#303a43}
+.calendar-day.today{background:rgba(192,241,138,.035)}
+.calendar-event{background:rgba(192,241,138,.1);border:1px solid rgba(192,241,138,.05);color:#d8f6c0}
+.calendar-event:hover{background:rgba(192,241,138,.17)}
+.category-bar-track{background:#222a30}
+.category-bar-track i{background:linear-gradient(90deg,#94c968,#c0f18a)}
+.settings-panel{padding:22px}
+.settings-row{border-color:#242b32}
+.settings-footnote{background:#14191e;border-color:#252d34}
+.telegram-steps>div{background:#151a20;border-color:#252d34}
+.privacy-actions .secondary-button{min-height:36px}
+.modal{background:linear-gradient(155deg,#171c23,#12161b);border-color:#303841;border-radius:16px}
+.modal input,.modal select{background:#0d1116;border-color:#2b333a}
+.toast{border-radius:11px;backdrop-filter:blur(14px)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid rgba(192,241,138,.6);outline-offset:2px}
+@media(max-width:720px){
+.page-content{padding:28px 15px 20px}
+.page-heading h1{font-size:28px}
+.stat-card{border-radius:11px;padding:14px;min-height:132px}
+.panel{padding:15px;border-radius:12px}
+.calendar-panel{padding:13px}
+}
