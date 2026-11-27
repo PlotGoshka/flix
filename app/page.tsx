@@ -14,6 +14,7 @@ import {
   Download,
   LayoutDashboard,
   Plus,
+  Pencil,
   Search,
   Settings2,
   ShieldCheck,
@@ -61,6 +62,7 @@ export default function Home() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({
     name: "",
@@ -152,7 +154,7 @@ export default function Home() {
     event.preventDefault();
     if (!form.name.trim() || !form.amount || !form.nextDate) return;
     const item: Subscription = {
-      id: crypto.randomUUID(),
+      id: editingId ?? crypto.randomUUID(),
       name: form.name.trim(),
       category: form.category,
       amount: Number(form.amount),
@@ -160,7 +162,12 @@ export default function Home() {
       cadence: form.cadence,
       nextDate: form.nextDate,
     };
-    setSubscriptions((current) => [...current, item]);
+    setSubscriptions((current) =>
+      editingId
+        ? current.map((existing) => (existing.id === editingId ? item : existing))
+        : [...current, item],
+    );
+    setEditingId(null);
     setForm({
       name: "",
       category: "Entertainment",
@@ -170,6 +177,25 @@ export default function Home() {
       nextDate: "",
     });
     setModalOpen(false);
+  }
+
+  function openEdit(item: Subscription) {
+    setEditingId(item.id);
+    setForm({
+      name: item.name,
+      category: item.category,
+      amount: String(item.amount),
+      currency: item.currency,
+      cadence: item.cadence,
+      nextDate: item.nextDate,
+    });
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    setModalOpen(false);
+    setEditingId(null);
+    setForm({ name: "", category: "Entertainment", amount: "", currency: "EUR", cadence: "monthly", nextDate: "" });
   }
 
   function removeSubscription(id: string) {
@@ -333,6 +359,7 @@ export default function Home() {
                       <div className="next-cell"><strong>{new Date(item.nextDate + "T12:00:00").toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" })}</strong><span>{nextChargeLabel(item.nextDate)}</span></div>
                       <div className="row-actions">
                         <button className="paid-button" onClick={() => markPaid(item.id)} aria-label={`Mark ${item.name} as paid`} title="Mark paid · move to next billing date"><CheckCircle2 size={16} /></button>
+                        <button className="edit-button" onClick={() => openEdit(item)} aria-label={`Edit ${item.name}`} title="Edit subscription"><Pencil size={15} /></button>
                         <button className="delete-button" onClick={() => removeSubscription(item.id)} aria-label={`Delete ${item.name}`}><Trash2 size={16} /></button>
                       </div>
                     </div>
@@ -372,12 +399,12 @@ export default function Home() {
       {modalOpen && (
         <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
           <form className="modal" onSubmit={addSubscription}>
-            <div className="modal-heading"><div><div className="eyebrow">NEW RECURRING PAYMENT</div><h2>Add subscription</h2></div><button type="button" className="icon-button" onClick={() => setModalOpen(false)} aria-label="Close"><X size={18} /></button></div>
+            <div className="modal-heading"><div><div className="eyebrow">NEW RECURRING PAYMENT</div><h2>{editingId ? "Edit subscription" : "Add subscription"}</h2></div><button type="button" className="icon-button" onClick={closeModal} aria-label="Close"><X size={18} /></button></div>
             <label>Service name<input required autoFocus placeholder="e.g. Streaming service" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
             <div className="form-two"><label>Category<select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option>Entertainment</option><option>Software</option><option>Music</option><option>Cloud storage</option><option>Shopping</option><option>Fitness</option><option>Other</option></select></label><label>Billing cycle<select value={form.cadence} onChange={(e) => setForm({ ...form, cadence: e.target.value as Subscription["cadence"] })}><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="weekly">Weekly</option></select></label></div>
             <div className="form-two"><label>Amount<input required type="number" min="0.01" step="0.01" placeholder="9.99" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></label><label>Currency<select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}><option value="EUR">EUR €</option><option value="USD">USD $</option><option value="GBP">GBP £</option><option value="RUB">RUB ₽</option></select></label></div>
             <label>Next payment date<input required type="date" value={form.nextDate} onChange={(e) => setForm({ ...form, nextDate: e.target.value })} /></label>
-            <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setModalOpen(false)}>Cancel</button><button type="submit" className="primary-button"><Plus size={16} /> Save subscription</button></div>
+            <div className="modal-actions"><button type="button" className="secondary-button" onClick={closeModal}>Cancel</button><button type="submit" className="primary-button"><Plus size={16} /> {editingId ? "Save changes" : "Save subscription"}</button></div>
           </form>
         </div>
       )}
