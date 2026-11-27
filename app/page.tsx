@@ -100,6 +100,34 @@ export default function Home() {
     }, {});
   }, [subscriptions]);
 
+  const categoryBreakdown = useMemo(() => {
+    const totals = new Map<string, { category: string; currency: string; amount: number }>();
+    for (const item of subscriptions) {
+      const monthlyAmount =
+        item.cadence === "yearly"
+          ? item.amount / 12
+          : item.cadence === "weekly"
+            ? (item.amount * 52) / 12
+            : item.amount;
+      const key = item.category + "|" + item.currency;
+      const current = totals.get(key);
+      totals.set(key, {
+        category: item.category,
+        currency: item.currency,
+        amount: (current?.amount ?? 0) + monthlyAmount,
+      });
+    }
+    const entries = Array.from(totals.values());
+    return entries
+      .map((entry) => {
+        const currencyTotal = entries
+          .filter((candidate) => candidate.currency === entry.currency)
+          .reduce((sum, candidate) => sum + candidate.amount, 0);
+        return { ...entry, share: currencyTotal > 0 ? (entry.amount / currencyTotal) * 100 : 0 };
+      })
+      .sort((a, b) => b.amount - a.amount);
+  }, [subscriptions]);
+
   const formatTotals = (multiplier = 1) => {
     const entries = Object.entries(monthlyTotals);
     if (entries.length === 0) return money(0);
@@ -322,8 +350,19 @@ export default function Home() {
               ))}
             </article>
             <article className="info-card insight-card" id="insights">
-              <div className="info-title"><div><h2>Spending insight</h2><p>A simple view of your recurring costs.</p></div><Sparkles size={18} /></div>
-              <div className="insight-empty"><div className="insight-ring"><span>{subscriptions.length}</span></div><div><strong>{subscriptions.length === 0 ? "Your overview starts here" : "You’re building your picture"}</strong><p>{subscriptions.length === 0 ? "Once you add subscriptions, FLIX will calculate your monthly and yearly commitments." : "Your estimates update automatically when you add or remove a subscription."}</p></div></div>
+              <div className="info-title"><div><h2>Spending by category</h2><p>Monthly equivalent, grouped by currency.</p></div><Sparkles size={18} /></div>
+              {categoryBreakdown.length === 0 ? (
+                <div className="mini-empty">Add subscriptions to see where your recurring money goes.</div>
+              ) : (
+                <div className="category-breakdown">
+                  {categoryBreakdown.map((entry) => (
+                    <div className="category-item" key={entry.category + entry.currency}>
+                      <div className="category-meta"><strong>{entry.category}</strong><span>{money(entry.amount, entry.currency)} / mo · {Math.round(entry.share)}%</span></div>
+                      <div className="category-track"><span style={{ width: entry.share + "%" }} /></div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </article>
           </section>
           <footer className="footer-note">FLIX is an independent tracker. It does not connect to banks or move money in this early version.</footer>
