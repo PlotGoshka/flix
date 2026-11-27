@@ -163,6 +163,7 @@ export default function Home() {
     return result;
   }, [items]);
   const dueSoon = upcoming.filter((item) => daysUntil(item.nextDate) >= 0 && daysUntil(item.nextDate) <= 7);
+  const overdueItems = upcoming.filter((item) => daysUntil(item.nextDate) < 0);
   const nextItem = upcoming.find((item) => daysUntil(item.nextDate) >= 0) ?? upcoming[0];
   const calendarStart = new Date(calendarMonth + "-01T12:00:00");
   const calendarOffset = (calendarStart.getDay() + 6) % 7;
@@ -329,7 +330,7 @@ export default function Home() {
               <article className="stat-card"><div className="stat-top"><span>MONTHLY COMMITMENT</span><div className="stat-icon green"><Wallet size={18} /></div></div><div className="stat-value-list">{currencies.filter(c => totals[c] > 0).length ? currencies.filter(c => totals[c] > 0).map(c => <strong key={c}>{money(totals[c], c)} <small>/ mo</small></strong>) : <strong>—</strong>}</div><div className="stat-foot"><ArrowUpRight size={14} /> Estimated recurring spend</div></article>
               <article className="stat-card"><div className="stat-top"><span>ACTIVE SUBSCRIPTIONS</span><div className="stat-icon purple"><CreditCard size={18} /></div></div><div className="stat-value">{items.length}</div><div className="stat-foot">Services you currently track</div></article>
               <article className="stat-card"><div className="stat-top"><span>UP NEXT</span><div className="stat-icon blue"><CalendarDays size={18} /></div></div><div className="stat-value">{nextItem ? money(nextItem.amount, nextItem.currency) : "—"}</div><div className="stat-foot">{nextItem ? `${nextItem.name} · ${new Date(nextItem.nextDate + "T00:00:00").toLocaleDateString("en", { month: "short", day: "numeric" })}` : "No upcoming payments"}</div></article>
-              <article className="stat-card"><div className="stat-top"><span>COMING IN 7 DAYS</span><div className="stat-icon orange"><Bell size={18} /></div></div><div className="stat-value">{dueSoon.length}</div><div className="stat-foot">Upcoming charges to prepare for</div></article>
+              <article className={`stat-card ${overdueItems.length ? "stat-card-alert" : ""}`}><div className="stat-top"><span>{overdueItems.length ? "OVERDUE PAYMENTS" : "PAYMENT STATUS"}</span><div className={`stat-icon ${overdueItems.length ? "orange" : "green"}`}><Bell size={18} /></div></div><div className="stat-value">{overdueItems.length || "✓"}</div><div className="stat-foot">{overdueItems.length ? "Payments that need attention" : "You are up to date"}</div></article>
             </div>
             <div className="content-grid">
               <section className="panel subscriptions-panel"><div className="panel-heading"><div><h2>Subscriptions</h2><p>Your tracked recurring services</p></div><button className="text-button" onClick={() => setActiveTab("Subscriptions")}>View all <ChevronRight size={15} /></button></div>
