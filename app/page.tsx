@@ -189,6 +189,13 @@ export default function Home() {
     if (!window.confirm("Delete this subscription?")) return;
     setItems((current) => current.filter((item) => item.id !== id));
   }
+  function clearLocalData() {
+    if (!window.confirm("Delete all subscriptions and reminder history stored in this browser? This cannot be undone. Export a backup first if you need one.")) return;
+    setItems([]);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(NOTIFIED_KEY);
+    setNotice("Local FLIX data cleared"); window.setTimeout(() => setNotice(""), 2600);
+  }
   function exportBackup() {
     const backup = { app: "FLIX", formatVersion: 1, exportedAt: new Date().toISOString(), subscriptions: items };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
@@ -330,7 +337,7 @@ export default function Home() {
             <section className="panel settings-panel privacy-panel">
               <div className="panel-heading"><div><h2>Data & privacy</h2><p>Know exactly where your information lives.</p></div></div>
               <div className="privacy-status"><span className="privacy-dot" /><div><strong>Stored locally on this device</strong><p>{items.length} {items.length === 1 ? "subscription" : "subscriptions"} saved in this browser. No bank or email connections are active.</p></div></div>
-              <div className="privacy-actions"><button className="secondary-button" onClick={exportCsv} disabled={!items.length}><Download size={15} /> Export CSV</button><div className="settings-backup-actions"><button className="secondary-button" onClick={exportBackup}><Download size={15} /> Export JSON backup</button><label className="secondary-button backup-import-label"><Download size={15} /> Import backup<input type="file" accept=".json,application/json" onChange={importBackup} /></label></div></div>
+              <div className="privacy-actions"><button className="secondary-button" onClick={exportCsv} disabled={!items.length}><Download size={15} /> Export CSV</button><button className="secondary-button danger-action" onClick={clearLocalData}><Trash2 size={15} /> Clear local data</button><div className="settings-backup-actions"><button className="secondary-button" onClick={exportBackup}><Download size={15} /> Export JSON backup</button><label className="secondary-button backup-import-label"><Download size={15} /> Import backup<input type="file" accept=".json,application/json" onChange={importBackup} /></label></div></div>
             </section>
           </div>}
           <footer className="footer"><span>FLIX © 2026</span><span>Subscription clarity, without the noise.</span><span>Version 0.1 · MVP</span></footer>
