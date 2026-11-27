@@ -129,7 +129,7 @@ export default function Home() {
   }
   function exportCsv() {
     const rows = [["Service", "Category", "Amount", "Currency", "Billing cycle", "Next payment"], ...items.map((item) => [item.name, item.category, String(item.amount), item.currency, item.cycle, item.nextDate])];
-    const csv = rows.map((row) => row.map((cell) => '"' + cell.replaceAll('"', '""') + '"').join(",")).join("\n");
+    const csv = "\uFEFF" + rows.map((row) => row.map((cell) => '"' + cell.replaceAll('"', '""') + '"').join(",")).join("\r\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a"); anchor.href = url; anchor.download = "flix-subscriptions.csv"; anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
