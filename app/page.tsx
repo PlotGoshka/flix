@@ -35,13 +35,11 @@ function addCycle(dateString: string, cycle: Cycle) {
   if (cycle === "weekly") date.setDate(date.getDate() + 7);
   if (cycle === "monthly" || cycle === "yearly") {
     const originalDay = date.getDate();
-    const sourceLastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    const preserveMonthEnd = originalDay === sourceLastDay;
     const targetYear = date.getFullYear() + (cycle === "yearly" ? 1 : 0);
     const targetMonth = date.getMonth() + (cycle === "monthly" ? 1 : 0);
     const normalized = new Date(targetYear, targetMonth, 1, 12);
     const lastDay = new Date(normalized.getFullYear(), normalized.getMonth() + 1, 0).getDate();
-    normalized.setDate(preserveMonthEnd ? lastDay : Math.min(originalDay, lastDay));
+    normalized.setDate(Math.min(originalDay, lastDay));
     return [normalized.getFullYear(), String(normalized.getMonth() + 1).padStart(2, "0"), String(normalized.getDate()).padStart(2, "0")].join("-");
   }
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
