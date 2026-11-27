@@ -163,6 +163,7 @@ export default function Home() {
     return day > 0 && day <= calendarDays ? day : null;
   });
   const calendarTitle = calendarStart.toLocaleDateString("en", { month: "long", year: "numeric" });
+  const calendarProjected = useMemo(() => projectedPayments(items, calendarMonth), [items, calendarMonth]);
   function shiftCalendarMonth(delta: number) {
     const next = new Date(calendarStart.getFullYear(), calendarStart.getMonth() + delta, 1, 12);
     setCalendarMonth([next.getFullYear(), String(next.getMonth() + 1).padStart(2, "0")].join("-"));
@@ -333,7 +334,7 @@ export default function Home() {
     <div className="calendar-grid calendar-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => <span key={day}>{day}</span>)}</div>
     <div className="calendar-grid">{calendarCells.map((day, index) => {
       const dateKey = day ? calendarMonth + "-" + String(day).padStart(2, "0") : "";
-      const dayItems = day ? projectedPayments(items, calendarMonth).filter(entry => entry.date === dateKey).map(entry => entry.item) : [];
+      const dayItems = day ? calendarProjected.filter(entry => entry.date === dateKey).map(entry => entry.item) : [];
       const isToday = dateKey === localDateString();
       return <div key={index} className={"calendar-day " + (day ? "" : "outside ") + (isToday ? "today " : "") + (dayItems.length ? "has-payment" : "")}>
         {day && <><span className="calendar-day-number">{day}</span>{dayItems.slice(0, 2).map(item => <button key={item.id} className="calendar-event" title={item.name + ": " + money(item.amount, item.currency)} onClick={() => openEdit(item)}>{item.name}</button>)}{dayItems.length > 2 && <small className="calendar-more">+{dayItems.length - 2} more</small>}</>}
