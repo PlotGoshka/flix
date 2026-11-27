@@ -36,6 +36,14 @@ The MVP stores data in the browser's localStorage on the current device. It does
 - lucide-react
 
 
+## Backup and restore
+
+In Settings, export a full JSON backup to move your list to another browser or device. Importing a backup replaces the current list after a confirmation. CSV export remains available for spreadsheets but is not a restorable backup. The Clear local data action removes tracked subscriptions and local reminder history from this browser.
+
+## Automated checks
+
+GitHub Actions runs lint and production build checks on pushes to `main` and pull requests targeting `main`. Checks are only confirmed after the workflow finishes successfully.
+
 ## Settings and reminders
 
 - Configure local browser reminders for 0, 1, 3, or 7 days before a payment.
