@@ -213,7 +213,7 @@ export default function Home() {
     const amount = Number(form.amount);
     if (!form.name.trim() || !Number.isFinite(amount) || amount <= 0 || !form.nextDate) return;
     if (editing) {
-      setItems((current) => current.map((item) => item.id === editing ? { ...item, ...form, name: form.name.trim(), amount, anchorDate: form.nextDate !== item.nextDate ? form.nextDate : item.anchorDate || item.nextDate } : item));
+      setItems((current) => current.map((item) => item.id === editing ? { ...item, ...form, name: form.name.trim(), amount, anchorDate: form.nextDate !== item.nextDate || form.cycle !== item.cycle ? form.nextDate : item.anchorDate || item.nextDate } : item));
     } else {
       setItems((current) => [...current, { ...form, id: crypto.randomUUID(), name: form.name.trim(), amount, anchorDate: form.nextDate, createdAt: new Date().toISOString() }]);
     }
