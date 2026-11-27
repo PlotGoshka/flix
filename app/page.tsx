@@ -55,6 +55,24 @@ function monthEquivalent(item: Subscription) {
   if (item.cycle === "yearly") return item.amount / 12;
   return item.amount;
 }
+function projectedPayments(items: Subscription[], monthKey: string) {
+  const monthStart = new Date(monthKey + "-01T12:00:00");
+  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1, 12);
+  return items.flatMap((item) => {
+    let date = item.nextDate;
+    const matches: { item: Subscription; date: string }[] = [];
+    let guard = 0;
+    while (date < [monthStart.getFullYear(), String(monthStart.getMonth() + 1).padStart(2, "0"), "01"].join("-") && guard++ < 120) {
+      date = addCycle(date, item.cycle);
+    }
+    guard = 0;
+    while (date < [monthEnd.getFullYear(), String(monthEnd.getMonth() + 1).padStart(2, "0"), "01"].join("-") && guard++ < 20) {
+      matches.push({ item, date });
+      date = addCycle(date, item.cycle);
+    }
+    return matches;
+  });
+}
 function localDateString() {
   const date = new Date();
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
@@ -302,7 +320,7 @@ export default function Home() {
     <div className="calendar-grid calendar-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => <span key={day}>{day}</span>)}</div>
     <div className="calendar-grid">{calendarCells.map((day, index) => {
       const dateKey = day ? calendarMonth + "-" + String(day).padStart(2, "0") : "";
-      const dayItems = day ? upcoming.filter(item => item.nextDate === dateKey) : [];
+      const dayItems = day ? projectedPayments(items, calendarMonth).filter(entry => entry.date === dateKey).map(entry => entry.item) : [];
       const isToday = dateKey === localDateString();
       return <div key={index} className={"calendar-day " + (day ? "" : "outside ") + (isToday ? "today " : "") + (dayItems.length ? "has-payment" : "")}>
         {day && <><span className="calendar-day-number">{day}</span>{dayItems.slice(0, 2).map(item => <button key={item.id} className="calendar-event" title={item.name + ": " + money(item.amount, item.currency)} onClick={() => openEdit(item)}>{item.name}</button>)}{dayItems.length > 2 && <small className="calendar-more">+{dayItems.length - 2} more</small>}</>}
