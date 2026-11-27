@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity, ArrowUpRight, Bell, CalendarDays, Check, ChevronRight, CreditCard, Download,
+  Activity, ArrowUpRight, Bell, CalendarDays, Check, ChevronLeft, ChevronRight, CreditCard, Download,
   LayoutDashboard, Plus, Search, Settings2, Sparkles, Trash2, Wallet, X,
   PencilLine, ReceiptText, ChartNoAxesCombined, Menu,
 } from "lucide-react";
@@ -71,6 +71,7 @@ export default function Home() {
   const [form, setForm] = useState(blankForm);
   const [mobileNav, setMobileNav] = useState(false);
   const [notice, setNotice] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(localDateString().slice(0, 7));
 
   useEffect(() => {
     try {
@@ -98,6 +99,18 @@ export default function Home() {
   }, [items]);
   const dueSoon = upcoming.filter((item) => daysUntil(item.nextDate) >= 0 && daysUntil(item.nextDate) <= 7);
   const nextItem = upcoming.find((item) => daysUntil(item.nextDate) >= 0) ?? upcoming[0];
+  const calendarStart = new Date(calendarMonth + "-01T12:00:00");
+  const calendarOffset = (calendarStart.getDay() + 6) % 7;
+  const calendarDays = new Date(calendarStart.getFullYear(), calendarStart.getMonth() + 1, 0).getDate();
+  const calendarCells = Array.from({ length: Math.ceil((calendarOffset + calendarDays) / 7) * 7 }, (_, index) => {
+    const day = index - calendarOffset + 1;
+    return day > 0 && day <= calendarDays ? day : null;
+  });
+  const calendarTitle = calendarStart.toLocaleDateString("en", { month: "long", year: "numeric" });
+  function shiftCalendarMonth(delta: number) {
+    const next = new Date(calendarStart.getFullYear(), calendarStart.getMonth() + delta, 1, 12);
+    setCalendarMonth([next.getFullYear(), String(next.getMonth() + 1).padStart(2, "0")].join("-"));
+  }
 
   function openAdd() {
     setEditing(null); setForm(blankForm); setModalOpen(true);
@@ -190,7 +203,22 @@ export default function Home() {
 
           {activeTab === "Subscriptions" && <section className="panel full-panel"><div className="panel-heading"><div><h2>All subscriptions <span className="count-pill">{items.length}</span></h2><p>Update prices, billing cycles, and payment dates.</p></div><div className="table-actions"><div className="search-box"><Search size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search services..." /></div><button className="secondary-button" onClick={exportCsv} disabled={!items.length}><Download size={15} /> Export CSV</button></div></div>{filtered.length ? <SubscriptionTable items={filtered} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} /> : <EmptyState onAdd={openAdd} />}</section>}
 
-          {activeTab === "Payments" && <section className="panel full-panel"><div className="panel-heading"><div><h2>Upcoming payments</h2><p>Sorted by the next scheduled charge.</p></div></div>{upcoming.length ? <SubscriptionTable items={upcoming} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} /> : <EmptyState onAdd={openAdd} />}</section>}
+          {activeTab === "Payments" && <div className="payments-layout">
+  <section className="panel calendar-panel">
+    <div className="panel-heading"><div><h2>Payment calendar</h2><p>Every charge, mapped by date.</p></div><div className="calendar-controls"><button className="icon-button" onClick={() => shiftCalendarMonth(-1)} aria-label="Previous month"><ChevronLeft size={17} /></button><strong>{calendarTitle}</strong><button className="icon-button" onClick={() => shiftCalendarMonth(1)} aria-label="Next month"><ChevronRight size={17} /></button></div></div>
+    <div className="calendar-grid calendar-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => <span key={day}>{day}</span>)}</div>
+    <div className="calendar-grid">{calendarCells.map((day, index) => {
+      const dateKey = day ? calendarMonth + "-" + String(day).padStart(2, "0") : "";
+      const dayItems = day ? upcoming.filter(item => item.nextDate === dateKey) : [];
+      const isToday = dateKey === localDateString();
+      return <div key={index} className={"calendar-day " + (day ? "" : "outside ") + (isToday ? "today " : "") + (dayItems.length ? "has-payment" : "")}>
+        {day && <><span className="calendar-day-number">{day}</span>{dayItems.slice(0, 2).map(item => <button key={item.id} className="calendar-event" title={item.name + ": " + money(item.amount, item.currency)} onClick={() => openEdit(item)}>{item.name}</button>)}{dayItems.length > 2 && <small className="calendar-more">+{dayItems.length - 2} more</small>}</>}
+      </div>;
+    })}</div>
+    <div className="calendar-legend"><span><i /> Payment scheduled</span><span>Tap a payment to edit it</span></div>
+  </section>
+  <section className="panel full-panel"><div className="panel-heading"><div><h2>All upcoming payments</h2><p>Sorted by the next scheduled charge.</p></div></div>{upcoming.length ? <SubscriptionTable items={upcoming} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} /> : <EmptyState onAdd={openAdd} />}</section>
+</div>}
 
           {activeTab === "Insights" && <section className="panel full-panel"><div className="panel-heading"><div><h2>Spending breakdown</h2><p>Monthly equivalent by currency and category.</p></div></div>{items.length ? <div className="insights-layout"><div className="insight-total"><span>TRACKED SERVICES</span><strong>{items.length}</strong><p>Monthly estimates are calculated from each billing cycle.</p></div><div className="category-breakdown">{categories.map((category) => { const amount = items.filter(i => i.category === category).reduce((sum, i) => sum + monthEquivalent(i), 0); const count = items.filter(i => i.category === category).length; return count ? <div className="category-row" key={category}><div><strong>{category}</strong><small>{count} {count === 1 ? "service" : "services"}</small></div><div className="category-bars">{currencies.filter(c => items.some(i => i.category === category && i.currency === c)).map(c => <div className="category-currency" key={c}><span>{c}</span><strong>{money(items.filter(i => i.category === category && i.currency === c).reduce((s, i) => s + monthEquivalent(i), 0), c)}</strong></div>)}</div></div> : null; })}</div></div> : <EmptyState onAdd={openAdd} />}</section>}
           <footer className="footer"><span>FLIX © 2026</span><span>Subscription clarity, without the noise.</span><span>Version 0.1 · MVP</span></footer>
