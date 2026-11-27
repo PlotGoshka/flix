@@ -85,19 +85,26 @@ export default function Home() {
     }
   }, [subscriptions, loaded]);
 
-  const monthlyTotal = useMemo(
-    () =>
-      subscriptions.reduce((total, item) => {
-        const amount =
-          item.cadence === "yearly"
-            ? item.amount / 12
-            : item.cadence === "weekly"
-              ? (item.amount * 52) / 12
-              : item.amount;
-        return total + amount;
-      }, 0),
-    [subscriptions],
-  );
+  const monthlyTotals = useMemo(() => {
+    return subscriptions.reduce<Record<string, number>>((totals, item) => {
+      const amount =
+        item.cadence === "yearly"
+          ? item.amount / 12
+          : item.cadence === "weekly"
+            ? (item.amount * 52) / 12
+            : item.amount;
+      totals[item.currency] = (totals[item.currency] ?? 0) + amount;
+      return totals;
+    }, {});
+  }, [subscriptions]);
+
+  const formatTotals = (multiplier = 1) => {
+    const entries = Object.entries(monthlyTotals);
+    if (entries.length === 0) return money(0);
+    return entries
+      .map(([currency, amount]) => money(amount * multiplier, currency))
+      .join(" + ");
+  };
 
   const upcoming = useMemo(
     () =>
@@ -193,7 +200,7 @@ export default function Home() {
           <section className="hero-card">
             <div className="hero-copy">
               <div className="hero-label"><Wallet size={15} /> MONTHLY COMMITMENT</div>
-              <div className="hero-amount">{money(monthlyTotal)}</div>
+              <div className="hero-amount">{formatTotals()}</div>
               <p>Estimated recurring spend per month</p>
               <div className="hero-footnote"><span className="footnote-dot" /> Based on the subscriptions you add</div>
             </div>
@@ -219,7 +226,7 @@ export default function Home() {
             </article>
             <article className="stat-card">
               <div className="stat-top"><span>Yearly estimate</span><ArrowUpRight size={17} /></div>
-              <strong>{money(monthlyTotal * 12)}</strong>
+              <strong>{formatTotals(12)}</strong>
               <small>Projected from current entries</small>
             </article>
           </div>
