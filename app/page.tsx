@@ -152,12 +152,13 @@ export default function Home() {
 
   function addSubscription(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.name.trim() || !form.amount || !form.nextDate) return;
+    const amount = Number(form.amount);
+    if (!form.name.trim() || !Number.isFinite(amount) || amount <= 0 || !form.nextDate) return;
     const item: Subscription = {
       id: editingId ?? crypto.randomUUID(),
       name: form.name.trim(),
       category: form.category,
-      amount: Number(form.amount),
+      amount,
       currency: form.currency,
       cadence: form.cadence,
       nextDate: form.nextDate,
@@ -397,7 +398,7 @@ export default function Home() {
       </section>
 
       {modalOpen && (
-        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
           <form className="modal" onSubmit={addSubscription}>
             <div className="modal-heading"><div><div className="eyebrow">NEW RECURRING PAYMENT</div><h2>{editingId ? "Edit subscription" : "Add subscription"}</h2></div><button type="button" className="icon-button" onClick={closeModal} aria-label="Close"><X size={18} /></button></div>
             <label>Service name<input required autoFocus placeholder="e.g. Streaming service" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
