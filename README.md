@@ -34,3 +34,23 @@ The MVP stores data in the browser's localStorage on the current device. It does
 - React
 - TypeScript
 - lucide-react
+
+
+## Telegram bot (foundation)
+
+FLIX includes a Telegram webhook endpoint at `/api/telegram/webhook`. It currently supports `/start`, `/help`, and `/status`. Subscription syncing and payment reminders are intentionally not enabled yet because the MVP still stores data only in the current browser.
+
+Configure these server-side environment variables after deploying FLIX:
+
+- `TELEGRAM_BOT_TOKEN` — token created with Telegram's official `@BotFather`. Keep it private; never add it to frontend code or commit it.
+- `TELEGRAM_WEBHOOK_SECRET` — a long random secret used to verify Telegram webhook requests.
+
+After deployment, register the webhook with Telegram's Bot API, using your public app URL and the same secret:
+
+```bash
+curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
+  -d "url=https://<YOUR_PUBLIC_FLIX_DOMAIN>/api/telegram/webhook" \
+  -d "secret_token=<YOUR_WEBHOOK_SECRET>"
+```
+
+Open the bot in Telegram and send `/start` to test it. Do not share the bot token in chat or commit it to GitHub. Before enabling real subscription reminders, FLIX needs secure sign-in, a shared database, and account-to-Telegram linking.
