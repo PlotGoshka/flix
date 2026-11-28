@@ -161,3 +161,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .stat-card-alert{border-color:rgba(255,176,107,.26);background:linear-gradient(145deg,rgba(42,27,19,.32),#101419)}
 .stat-card-alert .stat-icon.orange{background:rgba(255,176,107,.12);color:#ffb06b;border:1px solid rgba(255,176,107,.08)}
 .stat-card-alert .stat-foot svg{color:#ffb06b}
+
+
+/* Paused subscriptions: visually quiet, but still easy to find and resume. */
+.status-pill.paused{background:rgba(139,150,163,.08);border-color:rgba(139,150,163,.16);color:#98a3b2}
+.status-pill.paused i{background:#7d8998}
+.subscription-paused td{opacity:.68}
+.subscription-paused:hover td{opacity:.9}
+.subscription-paused .service-logo{filter:saturate(.55)}
