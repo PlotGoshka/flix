@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity, ArrowUpRight, Bell, CalendarDays, Check, ChevronLeft, ChevronRight, CreditCard, Download,
   LayoutDashboard, Plus, Search, Settings2, Sparkles, Trash2, Wallet, X,
-  PencilLine, ReceiptText, ChartNoAxesCombined, Menu, Send, ShieldCheck, Smartphone,
+  PencilLine, ReceiptText, ChartNoAxesCombined, Menu, Send, ShieldCheck, Smartphone, Pause, Play,
 } from "lucide-react";
 
 type Currency = "EUR" | "USD" | "GBP" | "RUB";
@@ -19,6 +19,7 @@ type Subscription = {
   nextDate: string;
   anchorDate?: string;
   createdAt: string;
+  isPaused?: boolean;
 };
 
 const STORAGE_KEY = "flix.subscriptions.v1";
@@ -156,13 +157,13 @@ export default function Home() {
     if (due.length) localStorage.setItem(NOTIFIED_KEY, JSON.stringify(sent));
   }, [items, loaded, preferences]);
 
-  const upcoming = useMemo(() => [...items].sort((a, b) => a.nextDate.localeCompare(b.nextDate)), [items]);
+  const upcoming = useMemo(() => items.filter(item => !item.isPaused).sort((a, b) => a.nextDate.localeCompare(b.nextDate)), [items]);
   const filtered = useMemo(() => items.filter((item) =>
     (item.name + " " + item.category).toLowerCase().includes(query.toLowerCase())
   ), [items, query]);
   const totals = useMemo(() => {
     const result: Record<Currency, number> = { EUR: 0, USD: 0, GBP: 0, RUB: 0 };
-    items.forEach((item) => { result[item.currency] += monthEquivalent(item); });
+    items.filter(item => !item.isPaused).forEach((item) => { result[item.currency] += monthEquivalent(item); });
     return result;
   }, [items]);
   const dueSoon = upcoming.filter((item) => daysUntil(item.nextDate) >= 0 && daysUntil(item.nextDate) <= 7);
@@ -176,7 +177,7 @@ export default function Home() {
     return day > 0 && day <= calendarDays ? day : null;
   });
   const calendarTitle = calendarStart.toLocaleDateString("en", { month: "long", year: "numeric" });
-  const calendarProjected = useMemo(() => projectedPayments(items, calendarMonth), [items, calendarMonth]);
+  const calendarProjected = useMemo(() => projectedPayments(items.filter(item => !item.isPaused), calendarMonth), [items, calendarMonth]);
   function shiftCalendarMonth(delta: number) {
     const next = new Date(calendarStart.getFullYear(), calendarStart.getMonth() + delta, 1, 12);
     setCalendarMonth([next.getFullYear(), String(next.getMonth() + 1).padStart(2, "0")].join("-"));
@@ -220,7 +221,7 @@ export default function Home() {
     setModalOpen(false); setNotice(editing ? "Subscription updated" : "Subscription added");
     window.setTimeout(() => setNotice(""), 2600);
   }
-  function markPaid(item: Subscription) {
+  function togglePaused(item: Subscription) {\n    setItems(current => current.map(entry => entry.id === item.id ? { ...entry, isPaused: !entry.isPaused } : entry));\n    setNotice(item.name + (item.isPaused ? " resumed" : " paused")); window.setTimeout(() => setNotice(""), 2600);\n  }\n  function markPaid(item: Subscription) {
     const today = localDateString();
     setItems((current) => current.map((entry) => {
       if (entry.id !== item.id) return entry;
@@ -351,7 +352,7 @@ export default function Home() {
             </div>
             <div className="content-grid">
               <section className="panel subscriptions-panel"><div className="panel-heading"><div><h2>Subscriptions</h2><p>Your tracked recurring services</p></div><button className="text-button" onClick={() => setActiveTab("Subscriptions")}>View all <ChevronRight size={15} /></button></div>
-                {items.length === 0 ? <EmptyState onAdd={openAdd} /> : <SubscriptionTable items={upcoming.slice(0, 5)} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} />}
+                {items.length === 0 ? <EmptyState onAdd={openAdd} /> : <SubscriptionTable items={upcoming.slice(0, 5)} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} onTogglePaused={togglePaused} />}
               </section>
               <section className="panel radar-panel"><div className="panel-heading"><div><h2>Payment radar</h2><p>Next charges on your calendar</p></div><div className="radar-icon"><Activity size={17} /></div></div>
                 {upcoming.length === 0 ? <div className="empty-radar"><div className="radar-empty-icon"><CalendarDays size={22} /></div><strong>Nothing on the radar</strong><p>Add a subscription to see upcoming payments here.</p></div> : <div className="radar-list">{upcoming.slice(0, 5).map((item) => { const days = daysUntil(item.nextDate); return <div className="radar-item" key={item.id}><div className="radar-date"><strong>{new Date(item.nextDate + "T00:00:00").toLocaleDateString("en", { day: "2-digit" })}</strong><small>{new Date(item.nextDate + "T00:00:00").toLocaleDateString("en", { month: "short" })}</small></div><div className="radar-detail"><strong>{item.name}</strong><small>{days < 0 ? "Overdue" : days === 0 ? "Due today" : days === 1 ? "Tomorrow" : `In ${days} days`}</small></div><strong className="radar-amount">{money(item.amount, item.currency)}</strong></div>; })}</div>}
@@ -360,7 +361,7 @@ export default function Home() {
             <section className="bottom-note"><div className="note-icon"><ShieldCheckIcon /></div><div><strong>Your data stays in this browser</strong><p>FLIX currently stores your subscription list locally on this device. No bank connection or automatic detection is active.</p></div><span>PRIVATE BY DEFAULT</span></section>
           </>}
 
-          {activeTab === "Subscriptions" && <section className="panel full-panel"><div className="panel-heading"><div><h2>All subscriptions <span className="count-pill">{items.length}</span></h2><p>Update prices, billing cycles, and payment dates.</p></div><div className="table-actions"><div className="search-box"><Search size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search services..." /></div><button className="secondary-button" onClick={exportCsv} disabled={!items.length}><Download size={15} /> Export CSV</button></div></div>{filtered.length ? <SubscriptionTable items={filtered} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} /> : <EmptyState onAdd={openAdd} />}</section>}
+          {activeTab === "Subscriptions" && <section className="panel full-panel"><div className="panel-heading"><div><h2>All subscriptions <span className="count-pill">{items.length}</span></h2><p>Update prices, billing cycles, and payment dates.</p></div><div className="table-actions"><div className="search-box"><Search size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search services..." /></div><button className="secondary-button" onClick={exportCsv} disabled={!items.length}><Download size={15} /> Export CSV</button></div></div>{filtered.length ? <SubscriptionTable items={filtered} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} onTogglePaused={togglePaused} /> : <EmptyState onAdd={openAdd} />}</section>}
 
           {activeTab === "Payments" && <div className="payments-layout">
   <section className="panel calendar-panel">
@@ -376,7 +377,7 @@ export default function Home() {
     })}</div>
     <div className="calendar-legend"><span><i /> Payment scheduled</span><span>Tap a payment to edit it</span></div>
   </section>
-  <section className="panel full-panel"><div className="panel-heading"><div><h2>All upcoming payments</h2><p>Sorted by the next scheduled charge.</p></div></div>{upcoming.length ? <SubscriptionTable items={upcoming} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} /> : <EmptyState onAdd={openAdd} />}</section>
+  <section className="panel full-panel"><div className="panel-heading"><div><h2>All upcoming payments</h2><p>Sorted by the next scheduled charge.</p></div></div>{upcoming.length ? <SubscriptionTable items={upcoming} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} onTogglePaused={togglePaused} /> : <EmptyState onAdd={openAdd} />}</section>
 </div>}
 
           {activeTab === "Insights" && <section className="panel full-panel"><div className="panel-heading"><div><h2>Spending breakdown</h2><p>Monthly equivalent by currency and category.</p></div></div>{items.length ? <div className="insights-layout"><div className="insight-total"><span>TRACKED SERVICES</span><strong>{items.length}</strong><p>Monthly estimates are calculated from each billing cycle.</p></div><div className="category-breakdown">{categories.map((category) => { const count = items.filter(i => i.category === category).length; return count ? <div className="category-row" key={category}><div><strong>{category}</strong><small>{count} {count === 1 ? "service" : "services"}</small></div><div className="category-bars">{currencies.filter(c => items.some(i => i.category === category && i.currency === c)).map(c => { const value = items.filter(i => i.category === category && i.currency === c).reduce((sum, i) => sum + monthEquivalent(i), 0); const maximum = Math.max(...categories.map(group => items.filter(i => i.category === group && i.currency === c).reduce((sum, i) => sum + monthEquivalent(i), 0))); return <div className="category-currency" key={c}><div className="category-currency-top"><span>{c}</span><strong>{money(value, c)}</strong></div><div className="category-bar-track"><i style={{ width: Math.max(4, value / maximum * 100) + "%" }} /></div></div>; })}</div></div> : null; })}</div></div> : <EmptyState onAdd={openAdd} />}</section>}
@@ -416,8 +417,8 @@ export default function Home() {
   );
 }
 
-function SubscriptionTable({ items, onEdit, onPaid, onDelete }: { items: Subscription[]; onEdit: (item: Subscription) => void; onPaid: (item: Subscription) => void; onDelete: (id: string) => void }) {
-  return <div className="table-wrap"><table><thead><tr><th>SERVICE</th><th>CATEGORY</th><th>PRICE</th><th>NEXT PAYMENT</th><th>STATUS</th><th /></tr></thead><tbody>{items.map((item) => { const days = daysUntil(item.nextDate); return <tr key={item.id}><td><div className="service-cell"><div className="service-logo">{item.name.trim().charAt(0).toUpperCase()}</div><strong>{item.name}</strong></div></td><td><span className="category-tag">{item.category}</span></td><td><strong className="price-cell">{money(item.amount, item.currency)}</strong><small className="cycle-label">/{item.cycle === "yearly" ? "year" : item.cycle === "weekly" ? "week" : "month"}</small></td><td><span className="date-cell">{new Date(item.nextDate + "T00:00:00").toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</span></td><td><span className={`status-pill ${days < 0 ? "overdue" : days <= 7 ? "soon" : "scheduled"}`}><i />{days < 0 ? "Overdue" : days === 0 ? "Due today" : days <= 7 ? "Due soon" : "Scheduled"}</span></td><td><div className="row-actions"><button title="Mark as paid" onClick={() => onPaid(item)}><Check size={15} /></button><button title="Edit" onClick={() => onEdit(item)}><PencilLine size={15} /></button><button title="Delete" onClick={() => onDelete(item.id)}><Trash2 size={15} /></button></div></td></tr>; })}</tbody></table></div>;
+function SubscriptionTable({ items, onEdit, onPaid, onDelete, onTogglePaused }: { items: Subscription[]; onEdit: (item: Subscription) => void; onPaid: (item: Subscription) => void; onDelete: (id: string) => void; onTogglePaused: (item: Subscription) => void }) {
+  return <div className="table-wrap"><table><thead><tr><th>SERVICE</th><th>CATEGORY</th><th>PRICE</th><th>NEXT PAYMENT</th><th>STATUS</th><th /></tr></thead><tbody>{items.map((item) => { const days = daysUntil(item.nextDate); return <tr key={item.id} className={item.isPaused ? "subscription-paused" : ""}><td><div className="service-cell"><div className="service-logo">{item.name.trim().charAt(0).toUpperCase()}</div><strong>{item.name}</strong></div></td><td><span className="category-tag">{item.category}</span></td><td><strong className="price-cell">{money(item.amount, item.currency)}</strong><small className="cycle-label">/{item.cycle === "yearly" ? "year" : item.cycle === "weekly" ? "week" : "month"}</small></td><td><span className="date-cell">{new Date(item.nextDate + "T00:00:00").toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</span></td><td><span className={`status-pill ${item.isPaused ? "paused" : days < 0 ? "overdue" : days <= 7 ? "soon" : "scheduled"}`}><i />{item.isPaused ? "Paused" : days < 0 ? "Overdue" : days === 0 ? "Due today" : days <= 7 ? "Due soon" : "Scheduled"}</span></td><td><div className="row-actions">{!item.isPaused && <button title="Mark as paid" onClick={() => onPaid(item)}><Check size={15} /></button>}<button title={item.isPaused ? "Resume subscription" : "Pause subscription"} onClick={() => onTogglePaused(item)}>{item.isPaused ? <Play size={15} /> : <Pause size={15} />}</button><button title="Edit" onClick={() => onEdit(item)}><PencilLine size={15} /></button><button title="Delete" onClick={() => onDelete(item.id)}><Trash2 size={15} /></button></div></td></tr>; })}</tbody></table></div>;
 }
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return <div className="empty-state"><div className="empty-illustration"><ReceiptText size={25} /></div><h3>Your list starts here</h3><p>Add your first subscription to see recurring costs and upcoming payments in one place.</p><button className="secondary-button" onClick={onAdd}><Plus size={15} /> Add first subscription</button></div>;
