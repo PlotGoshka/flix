@@ -260,7 +260,8 @@ export default function Home() {
       try {
         const parsed: unknown = JSON.parse(String(reader.result));
         const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
-        const source: unknown = Array.isArray(parsed) ? parsed : isRecord(parsed) ? parsed.subscriptions : undefined;
+        const parsedObject = isRecord(parsed) ? parsed : null;
+        const source: unknown = Array.isArray(parsed) ? parsed : parsedObject?.subscriptions;
         const isValidSubscription = (item: unknown): item is Record<string, unknown> => {
           if (!isRecord(item)) return false;
           return typeof item.name === "string" && !!item.name.trim() && Number.isFinite(Number(item.amount)) && Number(item.amount) > 0 &&
@@ -282,8 +283,9 @@ export default function Home() {
         });
         if (!window.confirm("Import " + clean.length + " subscriptions and replace your current FLIX list?")) return;
         setItems(clean);
-        if (parsed?.preferences && typeof parsed.preferences.browserNotifications === "boolean" && [0, 1, 3, 7].includes(parsed.preferences.reminderDays)) {
-          setPreferences({ browserNotifications: parsed.preferences.browserNotifications, reminderDays: parsed.preferences.reminderDays });
+        const backupPreferences = parsedObject?.preferences;
+        if (isRecord(backupPreferences) && typeof backupPreferences.browserNotifications === "boolean" && typeof backupPreferences.reminderDays === "number" && [0, 1, 3, 7].includes(backupPreferences.reminderDays)) {
+          setPreferences({ browserNotifications: backupPreferences.browserNotifications, reminderDays: backupPreferences.reminderDays });
         }
         localStorage.removeItem(NOTIFIED_KEY);
         setNotice("Backup imported successfully"); window.setTimeout(() => setNotice(""), 2600);
