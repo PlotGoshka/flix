@@ -258,19 +258,25 @@ export default function Home() {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const parsed = JSON.parse(String(reader.result));
-        const source = Array.isArray(parsed) ? parsed : parsed?.subscriptions;
-        if (!Array.isArray(source) || source.some((item: any) => !item || typeof item.name !== "string" || !item.name.trim() || !Number.isFinite(Number(item.amount)) || Number(item.amount) <= 0 || !currencies.includes(item.currency) || !["weekly", "monthly", "yearly"].includes(item.cycle) || typeof item.nextDate !== "string" || !isValidDateString(item.nextDate))) {
-          throw new Error("Invalid backup format");
-        }
+        const parsed: unknown = JSON.parse(String(reader.result));
+        const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+        const source: unknown = Array.isArray(parsed) ? parsed : isRecord(parsed) ? parsed.subscriptions : undefined;
+        const isValidSubscription = (item: unknown): item is Record<string, unknown> => {
+          if (!isRecord(item)) return false;
+          return typeof item.name === "string" && !!item.name.trim() && Number.isFinite(Number(item.amount)) && Number(item.amount) > 0 &&
+            typeof item.currency === "string" && currencies.includes(item.currency as Currency) &&
+            typeof item.cycle === "string" && ["weekly", "monthly", "yearly"].includes(item.cycle) &&
+            typeof item.nextDate === "string" && isValidDateString(item.nextDate);
+        };
+        if (!Array.isArray(source) || !source.every(isValidSubscription)) throw new Error("Invalid backup format");
         const usedIds = new Set<string>();
-        const clean: Subscription[] = source.map((item: any) => {
+        const clean: Subscription[] = source.map((item) => {
           const id = typeof item.id === "string" && item.id.trim() && !usedIds.has(item.id) ? item.id : crypto.randomUUID();
           usedIds.add(id);
           return {
-            id, name: item.name.trim(), category: categories.includes(item.category) ? item.category : "Other",
-            amount: Number(item.amount), currency: item.currency, cycle: item.cycle, nextDate: item.nextDate,
-            anchorDate: typeof item.anchorDate === "string" && isValidDateString(item.anchorDate) ? item.anchorDate : item.nextDate,
+            id, name: (item.name as string).trim(), category: typeof item.category === "string" && categories.includes(item.category) ? item.category : "Other",
+            amount: Number(item.amount), currency: item.currency as Currency, cycle: item.cycle as Cycle, nextDate: item.nextDate as string,
+            anchorDate: typeof item.anchorDate === "string" && isValidDateString(item.anchorDate) ? item.anchorDate : item.nextDate as string,
             createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString(),
           };
         });
@@ -371,7 +377,7 @@ export default function Home() {
   <section className="panel full-panel"><div className="panel-heading"><div><h2>All upcoming payments</h2><p>Sorted by the next scheduled charge.</p></div></div>{upcoming.length ? <SubscriptionTable items={upcoming} onEdit={openEdit} onPaid={markPaid} onDelete={removeItem} /> : <EmptyState onAdd={openAdd} />}</section>
 </div>}
 
-          {activeTab === "Insights" && <section className="panel full-panel"><div className="panel-heading"><div><h2>Spending breakdown</h2><p>Monthly equivalent by currency and category.</p></div></div>{items.length ? <div className="insights-layout"><div className="insight-total"><span>TRACKED SERVICES</span><strong>{items.length}</strong><p>Monthly estimates are calculated from each billing cycle.</p></div><div className="category-breakdown">{categories.map((category) => { const amount = items.filter(i => i.category === category).reduce((sum, i) => sum + monthEquivalent(i), 0); const count = items.filter(i => i.category === category).length; return count ? <div className="category-row" key={category}><div><strong>{category}</strong><small>{count} {count === 1 ? "service" : "services"}</small></div><div className="category-bars">{currencies.filter(c => items.some(i => i.category === category && i.currency === c)).map(c => { const value = items.filter(i => i.category === category && i.currency === c).reduce((sum, i) => sum + monthEquivalent(i), 0); const maximum = Math.max(...categories.map(group => items.filter(i => i.category === group && i.currency === c).reduce((sum, i) => sum + monthEquivalent(i), 0))); return <div className="category-currency" key={c}><div className="category-currency-top"><span>{c}</span><strong>{money(value, c)}</strong></div><div className="category-bar-track"><i style={{ width: Math.max(4, value / maximum * 100) + "%" }} /></div></div>; })}</div></div> : null; })}</div></div> : <EmptyState onAdd={openAdd} />}</section>}
+          {activeTab === "Insights" && <section className="panel full-panel"><div className="panel-heading"><div><h2>Spending breakdown</h2><p>Monthly equivalent by currency and category.</p></div></div>{items.length ? <div className="insights-layout"><div className="insight-total"><span>TRACKED SERVICES</span><strong>{items.length}</strong><p>Monthly estimates are calculated from each billing cycle.</p></div><div className="category-breakdown">{categories.map((category) => { const count = items.filter(i => i.category === category).length; return count ? <div className="category-row" key={category}><div><strong>{category}</strong><small>{count} {count === 1 ? "service" : "services"}</small></div><div className="category-bars">{currencies.filter(c => items.some(i => i.category === category && i.currency === c)).map(c => { const value = items.filter(i => i.category === category && i.currency === c).reduce((sum, i) => sum + monthEquivalent(i), 0); const maximum = Math.max(...categories.map(group => items.filter(i => i.category === group && i.currency === c).reduce((sum, i) => sum + monthEquivalent(i), 0))); return <div className="category-currency" key={c}><div className="category-currency-top"><span>{c}</span><strong>{money(value, c)}</strong></div><div className="category-bar-track"><i style={{ width: Math.max(4, value / maximum * 100) + "%" }} /></div></div>; })}</div></div> : null; })}</div></div> : <EmptyState onAdd={openAdd} />}</section>}
 
           {activeTab === "Settings" && <div className="settings-layout">
             <section className="panel settings-panel">
